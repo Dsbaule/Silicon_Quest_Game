@@ -9,6 +9,7 @@
 #include <allegro5/allegro_primitives.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+#include <math.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -30,7 +31,7 @@ const int tam_player_ver = 30;
 
 int matriz[20][20]=
 {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -262,14 +263,43 @@ int main(void)
             //=====================
 
 
-            if(!(xOff >= 0))
+            if((!(xOff >= 0))&&(Player.x == ((WIDTH/2)-(tam_player_hor/2))))
 				xOff += (keys[LEFT] | keys[A]) * 10;
-			if(!(yOff >= 0))
+            else if(Player.x >= 0){
+				Player.x -= (keys[LEFT] | keys[A]) * 10;
+				if(Player.x < 0)
+                    Player.x = 0;
+				if((xOff <= ((-colunas * tam_bloco_hor) + WIDTH)) && (Player.x < ((WIDTH/2)-(tam_player_hor/2) + 10)))
+                    Player.x = ((WIDTH/2)-(tam_player_hor/2));
+            }
+			if((!(yOff >= 0))&&(Player.y == ((HEIGHT/2)-(tam_player_ver/2))))
 				yOff += (keys[UP] | keys[W]) * 10;
-			if(!(xOff <= ((-colunas * tam_bloco_hor) + WIDTH)))
+			else if((Player.y >= 0)){
+				Player.y -= (keys[UP] | keys[W]) * 10;
+				if(Player.y < 0)
+                    Player.y = 0;
+				if((yOff <= ((-linhas * tam_bloco_ver) + HEIGHT)) && (Player.y < ((HEIGHT/2)-(tam_player_ver/2) + 10)))
+                    Player.y = ((HEIGHT/2)-(tam_player_ver/2));
+			}
+			if((!(xOff <= ((-colunas * tam_bloco_hor) + WIDTH)))&&(Player.x == ((WIDTH/2)-(tam_player_hor/2))))
 				xOff -= (keys[RIGHT] | keys[D]) * 10;
-			if(!(yOff <= ((-linhas * tam_bloco_ver) + HEIGHT)))
+			else if(Player.x < (WIDTH - tam_player_hor)){
+				Player.x += (keys[RIGHT] | keys[D]) * 10;
+				if(Player.x > ((WIDTH - tam_player_hor)))
+                    Player.x = (WIDTH - tam_player_hor);
+				if((xOff >= 0) && (Player.x > ((WIDTH/2)-(tam_player_hor/2) - 10)))
+                    Player.x = ((WIDTH/2)-(tam_player_hor/2));
+
+			}
+			if((!(yOff <= ((-linhas * tam_bloco_ver) + HEIGHT)))&&(Player.y == ((HEIGHT/2)-(tam_player_ver/2))))
 				yOff -= (keys[DOWN] | keys[S]) * 10;
+			else if((Player.y <= (HEIGHT - tam_player_ver))){
+				Player.y += (keys[DOWN] | keys[S]) * 10;
+				if(Player.y > (HEIGHT - tam_player_ver))
+                    Player.y = (HEIGHT - tam_player_ver);
+				if((yOff >= 0) && ((Player.y > ((HEIGHT/2)-(tam_player_ver/2) - 10))))
+                    Player.y = ((HEIGHT/2)-(tam_player_ver/2));
+			}
         }
 
         //==============================================
