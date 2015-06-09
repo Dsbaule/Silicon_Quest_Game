@@ -452,9 +452,6 @@ int main()
                 if((keys[DOWN] || keys[S]) && (((mapa.y + (numLinhas * blockHeight)) > DISPLAY_HEIGHT)))
                     mapa.y -= MOVEMENT_STEP + (2 * keys[SHIFT]);
 
-                if(keys[UP])
-                    mapa.y += 10;
-
                 movement = false;
             }
 
@@ -708,8 +705,6 @@ int main()
                 if((keys[DOWN] || keys[S]) && (((mapa.y + (numLinhas * blockHeight)) > DISPLAY_HEIGHT)) && (!colisionDown))
                     mapa.y -= MOVEMENT_STEP + (2 * keys[SHIFT]);
 
-                if(keys[UP])
-                    mapa.y += 10;
 
                 movement = false;
             }
