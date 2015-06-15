@@ -92,6 +92,15 @@ struct matriz
     int     linha;
 };
 
+typedef struct
+{
+    int maxFrame;
+    int curFrame;
+    int frameCount;
+    int frameDelay;
+    int frameWidth;
+    int frameHeight;
+} Sprite_Animation;
 //--------------------------------------------------
 // Definição das variaveis para INPUT
 //--------------------------------------------------
@@ -207,6 +216,9 @@ int main()
     ALLEGRO_BITMAP *blocoSilicio = NULL;
     ALLEGRO_BITMAP *blocoLava = NULL;
     ALLEGRO_BITMAP *blocoAgua = NULL;
+    ALLEGRO_BITMAP *RunningLeftMiner = NULL;
+    ALLEGRO_BITMAP *RunningRightMiner = NULL;
+    ALLEGRO_BITMAP *IdleMiner = NULL;
 
     blocoTerra = al_load_bitmap("Bitmaps/Terra.bmp");
     blocoGrama = al_load_bitmap("Bitmaps/Grama.bmp");
@@ -214,8 +226,28 @@ int main()
     blocoSilicio = al_load_bitmap("Bitmaps/Silicio.bmp");
     blocoLava = al_load_bitmap("Bitmaps/Lava.bmp");
     blocoAgua = al_load_bitmap("Bitmaps/Agua.bmp");
+    RunningLeftMiner = al_load_bitmap("Bitmaps/RunningMinerLeft.gif");
+    RunningRightMiner = al_load_bitmap("Bitmaps/RunningMinerRight.gif");
+    IdleMiner = al_load_bitmap("Bitmaps/minerIdle.gif");
+
 
     struct Posicao source = {al_get_bitmap_width(blocoTerra), al_get_bitmap_height(blocoTerra), 0};
+
+    Sprite_Animation running;
+    running.maxFrame = 5;
+    running.frameDelay = 6;
+    running.frameCount = 0;
+    running.curFrame = 0;
+    running.frameHeight = 48;
+    running.frameWidth = 46;
+
+    Sprite_Animation idle;
+    idle.maxFrame = 3;
+    idle.frameDelay = 25;
+    idle.frameCount = 0;
+    idle.curFrame = 0;
+    idle.frameHeight = 39;
+    idle.frameWidth = 47;
 
     //--------------------------------------------------
     // Definição das variaveis auxiliares
@@ -746,7 +778,22 @@ int main()
                         }
                 }
 
-                al_draw_filled_rectangle(jogador.x, jogador.y, jogador.x + blockWidth, jogador.y + blockHeight, al_map_rgb(COR_LIMITS));
+                if(++idle.frameCount >= idle.frameDelay)
+                {
+                    if(++idle.curFrame >= idle.maxFrame)
+                        idle.curFrame = 0;
+                    idle.frameCount = 0;
+                }
+
+                if(++running.frameCount >= running.frameDelay)
+                {
+                    if(++running.curFrame >= running.maxFrame)
+                        running.curFrame = 0;
+                    running.frameCount = 0;
+                }
+
+
+                //al_draw_filled_rectangle(jogador.x, jogador.y, jogador.x + blockWidth, jogador.y + blockHeight, al_map_rgb(COR_LIMITS));
 
                 // DRAW BORDERS
                 if(SHOW_BORDER)
@@ -779,6 +826,10 @@ int main()
                     al_draw_scaled_bitmap(blocoAgua, 0, 0, source.x, source.y, DISPLAY_WIDTH - (10 + blockWidth), 10, blockWidth, blockHeight, 0);
                     break;
                 }
+
+                 al_draw_scaled_bitmap(RunningLeftMiner, running.curFrame * running.frameWidth, 0, running.frameWidth, running.frameHeight, 500, 500, running.frameWidth * 2.5, running.frameHeight * 2.5,0);
+
+                //al_draw_scaled_bitmap(RunningLeftMiner, 0, 0, runnnig.frameWidth, running.frameHeight, x, y, imageWidth * scale, imageHeight * scale, 0);
 
                 if(SHOW_BORDER)
                     al_draw_rectangle(DISPLAY_WIDTH - (10 + blockWidth), 10, DISPLAY_WIDTH - 10, 10 + blockHeight, al_map_rgb(COR_BORDAS), 1);
