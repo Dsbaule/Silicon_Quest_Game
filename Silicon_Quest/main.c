@@ -733,32 +733,47 @@ int main()
 
             if((movement && !keys[SHIFT])||(movementBoost && keys[SHIFT]))
             {
-                if((keys[LEFT] || keys[A])&& (!colisionLeft))
+                if(!(keys[LEFT] || keys[A]) && !(keys[RIGHT] || keys[D]) && !(keys[UP] || keys[W]) && !(keys[DOWN] || keys[S]))
+                {
+                    Player_State=0;
+                }
+                else if((keys[LEFT] || keys[A]) && (keys[RIGHT] || keys[D]))
+                {
+                    Player_State=0;
+                }
+                else if((keys[LEFT] || keys[A])&& (!colisionLeft))
                 {
                     Player_State = 1;
+
                     Player_Dir = 0;
+
                     if(mapa.x < 0)
                         mapa.x += MOVEMENT_STEP;
                     else if((jogador.x > 0) && (jogador.x > mapa.x))
                         jogador.x -= MOVEMENT_STEP;
                 }
 
-                if((keys[RIGHT] || keys[D]) && (!colisionRight))
+                else if((keys[RIGHT] || keys[D]) && (!colisionRight))
                 {
                     Player_State = 2;
+
                     Player_Dir = 1;
+
                     if((mapa.x + (numColunas * blockWidth)) > DISPLAY_WIDTH)
                         mapa.x -= MOVEMENT_STEP;
                     else if(((jogador.x + blockWidth) < DISPLAY_WIDTH) && ((jogador.x + blockWidth) < (mapa.x + (numColunas * blockWidth))))
                         jogador.x += MOVEMENT_STEP;
                 }
 
-                if(!(keys[LEFT] || keys[A]) && !(keys[RIGHT] || keys[D]) && !(keys[UP] || keys[W]) && !(keys[DOWN] || keys[S]))
+
+                if(colisionLeft)
                 {
+                    Player_Dir=0;
                     Player_State=0;
                 }
-                if((keys[LEFT] || keys[A]) && (keys[RIGHT] || keys[D]))
+                if(colisionRight)
                 {
+                    Player_Dir=1;
                     Player_State=0;
                 }
 

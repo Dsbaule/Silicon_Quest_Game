@@ -13,11 +13,10 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
-					<Add directory="C:/CodeBlocks/MinGW/allegro5/include" />
+					<Add directory="C:/allegro5/include" />
 				</Compiler>
 				<Linker>
-					<Add library="C:\CodeBlocks\MinGW\allegro5\lib\liballegro-5.0.10-monolith-mt.a" />
-					<Add directory="C:/CodeBlocks/MinGW/allegro5/lib" />
+					<Add library="C:\allegro5\lib\liballegro-5.0.10-monolith-mt.a" />
 				</Linker>
 			</Target>
 			<Target title="Release">
