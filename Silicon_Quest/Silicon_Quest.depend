@@ -524,3 +524,13 @@
 1372639132 c:\allegro5\include\allegro5\allegro_native_dialog.h
 	"allegro5/allegro.h"
 
+1435089661 source:c:\users\aluno\desktop\silicon quest\silicon_quest_game\silicon_quest\main.c
+	<allegro5/allegro.h>
+	<allegro5/allegro_font.h>
+	<allegro5/allegro_ttf.h>
+	<allegro5/allegro_primitives.h>
+	<allegro5/allegro_image.h>
+	<allegro5/allegro_native_dialog.h>
+	<stdio.h>
+	<string.h>
+

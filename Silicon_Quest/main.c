@@ -39,7 +39,9 @@
 #define MAX_COLUNAS 2500
 #define MAX_LINHAS  2500
 #define NUM_BLOCOS  6
-#define GRAVITY     0.1
+#define GRAVITY     0.6
+#define JUMP_FORCE  2
+#define JUMP_TIME   10
 
 // Definições dos Objetos
 #define CHARACTER_WIDTH     50
@@ -63,6 +65,8 @@ ALLEGRO_TIMER *drawTimer = NULL;
 ALLEGRO_TIMER *movementTimer = NULL;
 ALLEGRO_TIMER *movementBoostTimer = NULL;
 ALLEGRO_TIMER *menuTimer = NULL;
+ALLEGRO_TIMER *jumpTimer = NULL;
+
 
 ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 ALLEGRO_EVENT ev;
@@ -132,6 +136,8 @@ bool draw = false;
 bool movement = false;
 bool movementBoost = false;
 bool readMenu = false;
+bool jumpResistance = false;
+
 int Player_State = 0;
 int Player_Dir = 0; //0 = esquerda; 1 = direita
 
@@ -163,6 +169,7 @@ int detectColisionRight_Matriz(struct Objeto character, struct Posicao mapaPos, 
 int detectColisionLeft_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 int detectColisionUp_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
+void Animation(int Player_State);
 
 
 int main()
@@ -208,6 +215,7 @@ int main()
     movementTimer = al_create_timer(1.0 / MOVEMENT_SPEED);
     movementBoostTimer = al_create_timer(1.0 / BOOST_SPEED);
     menuTimer = al_create_timer(1.0 / MENU_SPEED);
+    jumpTimer = al_create_timer(1.0 / JUMP_TIME);
 
 
     // Setup dos Eventos
@@ -219,12 +227,14 @@ int main()
     al_register_event_source(event_queue, al_get_timer_event_source(movementTimer));
     al_register_event_source(event_queue, al_get_timer_event_source(movementBoostTimer));
     al_register_event_source(event_queue, al_get_timer_event_source(menuTimer));
+    al_register_event_source(event_queue, al_get_timer_event_source(jumpTimer));
 
     // Inicialização dos Timers
     al_start_timer(drawTimer);
     al_start_timer(movementTimer);
     al_start_timer(movementBoostTimer);
     al_start_timer(menuTimer);
+    al_start_timer(jumpTimer);
 
     //--------------------------------------------------
     // Definição das variaveis de estado
@@ -759,27 +769,40 @@ int main()
 					jogador.x += MOVEMENT_STEP;
 				}
 
-                if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0))
-                {
-                    /*jogador.jump = true;
-                    jogador.force = 2;*/
-                    jogador.y -= MOVEMENT_STEP;
+                jogador.jump = !colisionDown;
+
+                if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0) && !jogador.jump){
+                    jogador.jump = true;
+                    jogador.force = JUMP_FORCE;
                 }
-                //jogador.y -= MOVEMENT_STEP;
+
+                if(jogador.jump){
+                    jogador.y -= jogador.force;
+                }
+
+                colisionDown = detectColisionDown_Matriz(jogador, mapa, blocos);
+                colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
+
+                if(colisionDown || colisionUp)
+                    jogador.force = 0;
+
+
+                if(jogador.force < -10)
+                    jogador.force = -10;
+
+                //if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0))
+                    //jogador.y -= MOVEMENT_STEP;
                 if((keys[S] || keys[DOWN]) && (colisionDown == 0) && ((jogador.y + jogador.height) < DISPLAY_HEIGHT))
                     jogador.y += MOVEMENT_STEP;
             }
 
-            jogador.jump = !colisionDown;
+            if(jumpResistance){
+                if(jogador.jump){
+                    jogador.force -= GRAVITY;
+                }
 
-            /*if(jogador.jump)
-            {
-                jogador.y -= jogador.force;
-                jogador.force -= 0.1;
+                jumpResistance = false;
             }
-
-            if(jogador.force < -100)
-                jogador.force = -10;*/
 
             if(jogador.y < 0)
                 jogador.y = 0;
@@ -798,14 +821,18 @@ int main()
 
 			if(colisionLeft)
 			{
-				Player_Dir=0;
-				Player_State=0;
+				Player_Dir = 0;
+				Player_State = 0;
 			}
 			if(colisionRight)
 			{
-				Player_Dir=1;
-				Player_State=0;
+				Player_Dir = 1;
+				Player_State = 0;
             }
+
+            colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
+            colisionDown = detectColisionDown_Matriz(jogador, mapa, blocos);
+
             if(colisionUp)
                 jogador.y = (((jogador.y - mapa.y)/blockHeight) * blockHeight) + mapa.y + blockHeight;
             if(colisionDown)
@@ -866,9 +893,8 @@ int main()
                 // DRAW BORDERS
                 if(SHOW_BORDER)
                 {
-                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 50, 0, "Mapa.y = %d", mapa.y);
-                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 75, 0, "Jogador.y = %d", jogador.y);
-                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 100, 0, "Diferenca = %d", ((jogador.y - mapa.y)%blockHeight));
+                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 50, 0, "jogador.jump = %d", jogador.jump);
+                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 75, 0, "Colision Down = %d", colisionDown);
 
 
                     al_draw_rectangle(mapa.x + mouseBlock.coluna * blockWidth, mapa.y + mouseBlock.linha * blockHeight, mapa.x + (mouseBlock.coluna * blockWidth) + blockWidth, mapa.y + (mouseBlock.linha * blockHeight) + blockHeight, al_map_rgb(COR_BORDAS), 1);
@@ -974,6 +1000,7 @@ int main()
     al_destroy_timer(movementTimer);
     al_destroy_timer(movementBoostTimer);
     al_destroy_timer(menuTimer);
+    al_destroy_timer(jumpTimer);
     al_destroy_display(display);
 
     return 0;
@@ -997,6 +1024,8 @@ int checkEvents()
             movement = true;
         else if(ev.timer.source == movementBoostTimer)
             movementBoost = true;
+        else if(ev.timer.source == jumpTimer)
+            jumpResistance = true;
         else if(ev.timer.source == menuTimer)
         {
             al_stop_timer(menuTimer);
@@ -1674,7 +1703,7 @@ int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, c
 
             if((blocoAtual.x > 0) && (blocoAtual.y > 0) && ((blocoAtual.x + blockWidth) < DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) < DISPLAY_HEIGHT))
             {
-                if((jogador2.y >= blocoAtual.y) && (jogador2.y <= blocoAtual2.y))
+                if((jogador2.y >= (blocoAtual.y - 1)) && (jogador2.y <= blocoAtual2.y))
                 {
                     if(((jogador.x >= blocoAtual.x) && (jogador.x <= blocoAtual2.x))
                             || ((jogador2.x >= blocoAtual.x) && (jogador2.x <= blocoAtual2.x))
