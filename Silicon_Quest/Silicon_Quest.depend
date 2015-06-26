@@ -261,7 +261,7 @@
 	<allegro5/allegro_font.h>
 	<allegro5/allegro_ttf.h>
 
-1435065032 source:c:\users\aluno\desktop\pong\github\silicon_quest_game\silicon_quest\main.c
+1435327108 source:c:\users\aluno\desktop\pong\github\silicon_quest_game\silicon_quest\main.c
 	<allegro5/allegro.h>
 	<allegro5/allegro_font.h>
 	<allegro5/allegro_ttf.h>
@@ -270,6 +270,7 @@
 	<allegro5/allegro_native_dialog.h>
 	<stdio.h>
 	<string.h>
+	<math.h>
 
 1372628331 c:\codeblocks\mingw\allegro5\include\allegro5\allegro_native_dialog.h
 	"allegro5/allegro.h"

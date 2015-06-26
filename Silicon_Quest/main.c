@@ -13,6 +13,7 @@
 //--------------------------------------------------
 #include <stdio.h>      // Biblioteca utilizada para escrita em arquivo
 #include <string.h>     // Biblioteca para a manipulação de Strings
+#include <math.h>       // Biblioteca utilizada para calculo da distancia
 
 //--------------------------------------------------
 // Definição dos valores para o compilador
@@ -78,6 +79,7 @@ ALLEGRO_DISPLAY *display = NULL;
 //--------------------------------------------------
 const int blockHeight = 50;
 const int blockWidth = 50;
+const int threshold = 100;
 
 //--------------------------------------------------
 // Definição das structs globais
@@ -170,7 +172,7 @@ int detectColisionLeft_Matriz(struct Objeto character, struct Posicao mapaPos, c
 int detectColisionUp_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 void Animation(int Player_State);
-
+float CheckDistance(int x1, int y1, int x2, int y2);
 
 int main()
 {
@@ -251,7 +253,7 @@ int main()
     ALLEGRO_BITMAP *blocoSilicio = NULL;
     ALLEGRO_BITMAP *blocoLava = NULL;
     ALLEGRO_BITMAP *blocoAgua = NULL;
-	ALLEGRO_BITMAP *RunningMiner = NULL;
+    ALLEGRO_BITMAP *RunningMiner = NULL;
     ALLEGRO_BITMAP *IdleMiner = NULL;
     ALLEGRO_BITMAP *StandingMiner = NULL;
     ALLEGRO_BITMAP *MiningMiner = NULL;
@@ -271,7 +273,7 @@ int main()
 
     struct Posicao source = {al_get_bitmap_width(blocoTerra), al_get_bitmap_height(blocoTerra), 0};
 
-     running.maxFrame = 6;
+    running.maxFrame = 6;
     running.frameDelay = 6;
     running.frameCount = 0;
     running.curFrame = 0;
@@ -733,18 +735,10 @@ int main()
                     selectedBlock = NUM_BLOCOS - 1;
             }
 
-            if(keys[MOUSE_1])
-			{
-				blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
-				Player_State = 4;
-			}
-
-            if(keys[MOUSE_2])
-                blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
 
             if((movement && !keys[SHIFT])||(movementBoost && keys[SHIFT]))
             {
-            	if(!(keys[LEFT] || keys[A]) && !(keys[RIGHT] || keys[D]) && !(keys[UP] || keys[W]) && !(keys[DOWN] || keys[S]))
+                if(!(keys[LEFT] || keys[A]) && !(keys[RIGHT] || keys[D]) && !(keys[UP] || keys[W]) && !(keys[DOWN] || keys[S]))
                 {
                     Player_State=0;
                 }
@@ -752,31 +746,33 @@ int main()
                 {
                     Player_State=0;
                 }
-				else if((keys[A] || keys[LEFT]) && (colisionLeft == 0) && (jogador.x > 0))
-				{
+                else if((keys[A] || keys[LEFT]) && (colisionLeft == 0) && (jogador.x > 0))
+                {
                     Player_State = 1;
 
                     Player_Dir = 0;
 
-					jogador.x -= MOVEMENT_STEP;
-				}
-				else if((keys[D] || keys[RIGHT]) && (colisionRight == 0) && ((jogador.x + jogador.width) < DISPLAY_WIDTH))
-				{
-					Player_State = 2;
+                    jogador.x -= MOVEMENT_STEP;
+                }
+                else if((keys[D] || keys[RIGHT]) && (colisionRight == 0) && ((jogador.x + jogador.width) < DISPLAY_WIDTH))
+                {
+                    Player_State = 2;
 
                     Player_Dir = 1;
 
-					jogador.x += MOVEMENT_STEP;
-				}
+                    jogador.x += MOVEMENT_STEP;
+                }
 
                 jogador.jump = !colisionDown;
 
-                if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0) && !jogador.jump){
+                if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0) && !jogador.jump)
+                {
                     jogador.jump = true;
                     jogador.force = JUMP_FORCE;
                 }
 
-                if(jogador.jump){
+                if(jogador.jump)
+                {
                     jogador.y -= jogador.force;
                 }
 
@@ -791,13 +787,28 @@ int main()
                     jogador.force = -10;
 
                 //if((keys[W] || keys[UP]) && (colisionUp == 0) && (jogador.y > 0))
-                    //jogador.y -= MOVEMENT_STEP;
+                //jogador.y -= MOVEMENT_STEP;
                 if((keys[S] || keys[DOWN]) && (colisionDown == 0) && ((jogador.y + jogador.height) < DISPLAY_HEIGHT))
                     jogador.y += MOVEMENT_STEP;
             }
 
-            if(jumpResistance){
-                if(jogador.jump){
+            else if(threshold > CheckDistance((jogador.x + 23), (jogador.y + 23), mouse.x, mouse.y))
+            {
+                if(keys[MOUSE_1])
+                {
+                    blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
+                    Player_State = 4;
+                }
+            }
+
+            if(keys[MOUSE_2])
+                blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
+
+
+            if(jumpResistance)
+            {
+                if(jogador.jump)
+                {
                     jogador.force -= GRAVITY;
                 }
 
@@ -819,15 +830,15 @@ int main()
             colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
             colisionDown = detectColisionDown_Matriz(jogador, mapa, blocos);
 
-			if(colisionLeft)
-			{
-				Player_Dir = 0;
-				Player_State = 0;
-			}
-			if(colisionRight)
-			{
-				Player_Dir = 1;
-				Player_State = 0;
+            if(colisionLeft)
+            {
+                Player_Dir = 0;
+                Player_State = 0;
+            }
+            if(colisionRight)
+            {
+                Player_Dir = 1;
+                Player_State = 0;
             }
 
             colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
@@ -926,7 +937,9 @@ int main()
                     break;
                 }
 
-				if(Player_State == 0 && Player_Dir == 0)
+                al_draw_circle(jogador.x + 23, jogador.y + 23, threshold, al_map_rgba_f(.5, 0, .5, .5), 1);
+
+                if(Player_State == 0 && Player_Dir == 0)
                 {
                     al_draw_scaled_bitmap(StandingMiner, standing.curFrame * standing.frameWidth, 0, standing.frameWidth, standing.frameHeight, jogador.x - 78, jogador.y - 75, standing.frameWidth * 2.5, standing.frameHeight * 2.5,0);
                 }
@@ -1746,7 +1759,8 @@ void Animation(int Player_State)
                 standing.curFrame = 0;
             standing.frameCount = 0;
         }
-    }else
+    }
+    else
     {
         standing.curFrame = 0;
     }
@@ -1759,7 +1773,8 @@ void Animation(int Player_State)
                 running.curFrame = 0;
             running.frameCount = 0;
         }
-    }else
+    }
+    else
     {
         running.curFrame = 0;
     }
@@ -1772,7 +1787,8 @@ void Animation(int Player_State)
                 idle.curFrame = 1;
             idle.frameCount = 0;
         }
-    }else
+    }
+    else
     {
         idle.curFrame = 0;
     }
@@ -1785,7 +1801,8 @@ void Animation(int Player_State)
                 mining.curFrame = 0;
             mining.frameCount = 0;
         }
-    }else
+    }
+    else
     {
         mining.curFrame = 0;
     }
@@ -1798,8 +1815,14 @@ void Animation(int Player_State)
                 dying.curFrame = 0;
             dying.frameCount = 0;
         }
-    }else
+    }
+    else
     {
         dying.curFrame = 0;
     }
+}
+
+float CheckDistance(int x1, int y1, int x2, int y2)
+{
+    return sqrt(pow((float)x1 - x2, 2) + pow((float)y1 - y2, 2));
 }
