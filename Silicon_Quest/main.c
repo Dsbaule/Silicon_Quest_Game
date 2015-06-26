@@ -20,7 +20,7 @@
 //--------------------------------------------------
 
 // Definições da tela
-#define FULLSCREEN      0
+#define FULLSCREEN      1
 #define DISPLAY_WIDTH   1600
 #define DISPLAY_HEIGHT  900
 
@@ -79,7 +79,7 @@ ALLEGRO_DISPLAY *display = NULL;
 //--------------------------------------------------
 const int blockHeight = 50;
 const int blockWidth = 50;
-const int threshold = 100;
+const int threshold = 125;
 
 //--------------------------------------------------
 // Definição das structs globais
@@ -792,12 +792,32 @@ int main()
                     jogador.y += MOVEMENT_STEP;
             }
 
-            else if(threshold > CheckDistance((jogador.x + 23), (jogador.y + 23), mouse.x, mouse.y))
+            if(colisionLeft)
             {
-                if(keys[MOUSE_1])
+                Player_Dir = 0;
+                Player_State = 0;
+            }
+            if(colisionRight)
+            {
+                Player_Dir = 1;
+                Player_State = 0;
+            }
+
+
+            if(threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight)))
+                    || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + blockWidth + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight))))
+                    || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight))))
+                    || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + blockWidth + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight)))))
+            {
+                if(keys[MOUSE_1] && !(keys[LEFT] || keys[A] || keys[RIGHT] || keys[D] || keys[UP] || keys[W] || keys[DOWN] || keys[S]))
                 {
                     blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
                     Player_State = 4;
+
+                    if((mapa.x + (mouseBlock.coluna * blockWidth)) < jogador.x)
+                        Player_Dir = 0;
+                    else if((mapa.x + (mouseBlock.coluna * blockWidth)) > jogador.x)
+                        Player_Dir = 1;
                 }
             }
 
@@ -830,17 +850,6 @@ int main()
             colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
             colisionDown = detectColisionDown_Matriz(jogador, mapa, blocos);
 
-            if(colisionLeft)
-            {
-                Player_Dir = 0;
-                Player_State = 0;
-            }
-            if(colisionRight)
-            {
-                Player_Dir = 1;
-                Player_State = 0;
-            }
-
             colisionUp = detectColisionUp_Matriz(jogador, mapa, blocos);
             colisionDown = detectColisionDown_Matriz(jogador, mapa, blocos);
 
@@ -849,12 +858,29 @@ int main()
             if(colisionDown)
                 jogador.y -= 1 + ((jogador.y - mapa.y) % blockHeight) - (blockHeight - (jogador.height % blockHeight));
 
+            if((mapa.x <= 0) && (jogador.x <= ((DISPLAY_WIDTH/2) - (jogador.width/2))))
+            {
+                mapa.x += ((DISPLAY_WIDTH/2) - (jogador.width/2)) - jogador.x;
+                jogador.x = ((DISPLAY_WIDTH/2) - (jogador.width/2));
+            }
 
-            mapa.x += ((DISPLAY_WIDTH/2) - (jogador.width/2)) - jogador.x;
-            mapa.y += ((DISPLAY_HEIGHT/2) - (jogador.height/2)) - jogador.y;
-            jogador.x = ((DISPLAY_WIDTH/2) - (jogador.width/2));
-            jogador.y = ((DISPLAY_HEIGHT/2) - (jogador.height/2));
+            if((mapa.y <= 0) && (jogador.y <= ((DISPLAY_HEIGHT/2) - (jogador.height/2))))
+            {
+                mapa.y += ((DISPLAY_HEIGHT/2) - (jogador.height/2)) - jogador.y;
+                jogador.y = ((DISPLAY_HEIGHT/2) - (jogador.height/2));
+            }
 
+            if(((mapa.x + (numColunas * blockWidth)) > DISPLAY_WIDTH) && (jogador.x >= ((DISPLAY_WIDTH/2) - (jogador.width/2))))
+            {
+                mapa.x += ((DISPLAY_WIDTH/2) - (jogador.width/2)) - jogador.x;
+                jogador.x = ((DISPLAY_WIDTH/2) - (jogador.width/2));
+            }
+
+            if(((mapa.y + (numLinhas * blockHeight)) > DISPLAY_HEIGHT) && (jogador.y >= ((DISPLAY_HEIGHT/2) - (jogador.height/2))))
+            {
+                mapa.y += ((DISPLAY_HEIGHT/2) - (jogador.height/2)) - jogador.y;
+                jogador.y = ((DISPLAY_HEIGHT/2) - (jogador.height/2));
+            }
 
             movement = false;
             movementBoost = false;
@@ -937,7 +963,7 @@ int main()
                     break;
                 }
 
-                al_draw_circle(jogador.x + 23, jogador.y + 23, threshold, al_map_rgba_f(.5, 0, .5, .5), 1);
+                al_draw_circle(jogador.x + 23, jogador.y + 50, threshold, al_map_rgba_f(.5, 0, .5, .5), 1);
 
                 if(Player_State == 0 && Player_Dir == 0)
                 {
@@ -1546,7 +1572,7 @@ int detectColisionLeft_Matriz(struct Objeto character, struct Posicao mapaPos, c
             blocoAtual.x = mapa.x + (blockWidth * colunaAtual);
             blocoAtual2.x = blocoAtual.x + blockWidth - 1;
 
-            if((blocoAtual.x > 0) && (blocoAtual.y > 0) && ((blocoAtual.x + blockWidth) < DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) < DISPLAY_HEIGHT))
+            if((blocoAtual.x >= 0) && (blocoAtual.y >= 0) && ((blocoAtual.x + blockWidth) <= DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) <= DISPLAY_HEIGHT))
             {
                 if((jogador2.x >= blocoAtual.x) && (jogador.x <= (blocoAtual2.x + 1)))
                 {
@@ -1575,7 +1601,7 @@ int detectColisionLeft_Matriz(struct Objeto character, struct Posicao mapaPos, c
         }
     }
 
-    if(jogador2.y >= DISPLAY_HEIGHT)
+    if(jogador.x <= mapa.x + 1)
         result = 1;
 
     return result;
@@ -1602,7 +1628,7 @@ int detectColisionRight_Matriz(struct Objeto character, struct Posicao mapaPos, 
             blocoAtual.x = mapa.x + (blockWidth * colunaAtual);
             blocoAtual2.x = blocoAtual.x + blockWidth - 1;
 
-            if((blocoAtual.x > 0) && (blocoAtual.y > 0) && ((blocoAtual.x + blockWidth) < DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) < DISPLAY_HEIGHT))
+            if((blocoAtual.x >= 0) && (blocoAtual.y >= 0) && ((blocoAtual.x + blockWidth) <= DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) <= DISPLAY_HEIGHT))
             {
                 if((jogador2.x >= (blocoAtual.x - 1)) && (jogador2.x <= blocoAtual2.x))
                 {
@@ -1631,7 +1657,7 @@ int detectColisionRight_Matriz(struct Objeto character, struct Posicao mapaPos, 
         }
     }
 
-    if(jogador2.y >= DISPLAY_HEIGHT)
+    if(jogador2.x >= (mapa.x + (numColunas * blockWidth) - 1))
         result = 1;
 
     return result;
@@ -1658,7 +1684,7 @@ int detectColisionUp_Matriz(struct Objeto character, struct Posicao mapaPos, cha
             blocoAtual.x = mapa.x + (blockWidth * colunaAtual);
             blocoAtual2.x = blocoAtual.x + blockWidth - 1;
 
-            if((blocoAtual.x > 0) && (blocoAtual.y > 0) && ((blocoAtual.x + blockWidth) < DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) < DISPLAY_HEIGHT))
+            if((blocoAtual.x >= 0) && (blocoAtual.y >= 0) && ((blocoAtual.x + blockWidth) <= DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) <= DISPLAY_HEIGHT))
             {
                 if((jogador.y <= blocoAtual2.y ) && (jogador.y >= blocoAtual.y))
                 {
@@ -1687,7 +1713,7 @@ int detectColisionUp_Matriz(struct Objeto character, struct Posicao mapaPos, cha
         }
     }
 
-    if(jogador.y <= 0)
+    if(jogador.y <= mapa.y + 1)
         result = 1;
 
     return result;
@@ -1714,7 +1740,7 @@ int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, c
             blocoAtual.x = mapa.x + (blockWidth * colunaAtual);
             blocoAtual2.x = blocoAtual.x + blockWidth - 1;
 
-            if((blocoAtual.x > 0) && (blocoAtual.y > 0) && ((blocoAtual.x + blockWidth) < DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) < DISPLAY_HEIGHT))
+            if((blocoAtual.x >= 0) && (blocoAtual.y >= 0) && ((blocoAtual.x + blockWidth) <= DISPLAY_WIDTH) && ((blocoAtual.y + blockHeight) <= DISPLAY_HEIGHT))
             {
                 if((jogador2.y >= (blocoAtual.y - 1)) && (jogador2.y <= blocoAtual2.y))
                 {
@@ -1743,7 +1769,7 @@ int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, c
         }
     }
 
-    if(jogador2.y >= DISPLAY_HEIGHT)
+    if(jogador2.y >= (mapa.y + (numLinhas * blockHeight) -1))
         result = 1;
 
     return result;
