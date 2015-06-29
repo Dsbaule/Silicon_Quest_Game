@@ -20,7 +20,7 @@
 //--------------------------------------------------
 
 // Definições da tela
-#define FULLSCREEN      1
+#define FULLSCREEN      0
 #define DISPLAY_WIDTH   1600
 #define DISPLAY_HEIGHT  900
 
@@ -32,7 +32,7 @@
 #define MENU_SPEED      7
 
 // Definições de desenho
-#define SHOWMOUSE       1
+#define SHOWMOUSE       0
 #define SHOW_BORDER     1
 #define SHOW_MAP_LIMITS 1
 
@@ -161,6 +161,8 @@ int numLinhas = 100;
 
 int selectedBlock = 1;
 
+int PickaxeCursor = 0;
+
 //--------------------------------------------------
 // Definição das funções utilizadas
 //--------------------------------------------------
@@ -258,6 +260,8 @@ int main()
     ALLEGRO_BITMAP *StandingMiner = NULL;
     ALLEGRO_BITMAP *MiningMiner = NULL;
     ALLEGRO_BITMAP *DyingMiner = NULL;
+    ALLEGRO_BITMAP *pickaxeCursor = NULL;
+    ALLEGRO_BITMAP *idleCursor = NULL;
 
     blocoTerra = al_load_bitmap("Bitmaps/Terra.bmp");
     blocoGrama = al_load_bitmap("Bitmaps/Grama.bmp");
@@ -270,6 +274,9 @@ int main()
     StandingMiner = al_load_bitmap("Bitmaps/minerStanding.png");
     MiningMiner = al_load_bitmap("Bitmaps/minerMining.png");
     DyingMiner = al_load_bitmap("Bitmaps/mineDying.png");
+    pickaxeCursor = al_load_bitmap("Bitmaps/MineCursor.png");
+    idleCursor = al_load_bitmap("Bitmaps/NotMineCursor.png");
+
 
     struct Posicao source = {al_get_bitmap_width(blocoTerra), al_get_bitmap_height(blocoTerra), 0};
 
@@ -809,9 +816,11 @@ int main()
                     || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight))))
                     || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + blockWidth + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight)))))
             {
+				PickaxeCursor = 1;
                 if(keys[MOUSE_1] && !(keys[LEFT] || keys[A] || keys[RIGHT] || keys[D] || keys[UP] || keys[W] || keys[DOWN] || keys[S]))
                 {
-                    blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
+
+                    blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
                     Player_State = 4;
 
                     if((mapa.x + (mouseBlock.coluna * blockWidth)) < jogador.x)
@@ -820,9 +829,12 @@ int main()
                         Player_Dir = 1;
                 }
             }
-
+            else
+			{
+				PickaxeCursor = 0;
+			}
             if(keys[MOUSE_2])
-                blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
+                blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
 
 
             if(jumpResistance)
@@ -930,8 +942,8 @@ int main()
                 // DRAW BORDERS
                 if(SHOW_BORDER)
                 {
-                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 50, 0, "jogador.jump = %d", jogador.jump);
-                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 75, 0, "Colision Down = %d", colisionDown);
+                    /*al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 50, 0, "jogador.jump = %d", jogador.jump);
+                    al_draw_textf(arial_24, al_map_rgb(COR_BORDAS), 50, 75, 0, "Colision Down = %d", colisionDown);*/
 
 
                     al_draw_rectangle(mapa.x + mouseBlock.coluna * blockWidth, mapa.y + mouseBlock.linha * blockHeight, mapa.x + (mouseBlock.coluna * blockWidth) + blockWidth, mapa.y + (mouseBlock.linha * blockHeight) + blockHeight, al_map_rgb(COR_BORDAS), 1);
@@ -962,8 +974,6 @@ int main()
                     al_draw_scaled_bitmap(blocoAgua, 0, 0, source.x, source.y, DISPLAY_WIDTH - (10 + blockWidth), 10, blockWidth, blockHeight, 0);
                     break;
                 }
-
-                al_draw_circle(jogador.x + 23, jogador.y + 50, threshold, al_map_rgba_f(.5, 0, .5, .5), 1);
 
                 if(Player_State == 0 && Player_Dir == 0)
                 {
@@ -1004,6 +1014,11 @@ int main()
                 {
                     al_draw_scaled_bitmap(DyingMiner, dying.curFrame * dying.frameWidth, 0, dying.frameWidth, dying.frameHeight, jogador.x - 70, jogador.y - 75, dying.frameWidth * 2.5, dying.frameHeight * 2.5,0);
                 }
+
+                if(PickaxeCursor == 1)
+					al_draw_bitmap(pickaxeCursor, mouse.x, (mouse.y + 6), ALLEGRO_FLIP_HORIZONTAL);
+				if(PickaxeCursor == 0)
+					al_draw_bitmap(idleCursor, (mouse.x - 16), (mouse.y - 6), 0);
 
                 if(SHOW_BORDER)
                     al_draw_rectangle(DISPLAY_WIDTH - (10 + blockWidth), 10, DISPLAY_WIDTH - 10, 10 + blockHeight, al_map_rgb(COR_BORDAS), 1);

@@ -16,7 +16,6 @@
 					<Add directory="C:/allegro5/include" />
 				</Compiler>
 				<Linker>
-					<Add library="C:\allegro5\bin\allegro-5.0.10-monolith-mt.dll" />
 					<Add directory="C:/allegro5/lib" />
 				</Linker>
 			</Target>
