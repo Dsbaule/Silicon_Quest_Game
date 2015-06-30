@@ -20,9 +20,13 @@
 //--------------------------------------------------
 
 // Definições da tela
-#define FULLSCREEN      0
+#define FULLSCREEN      1
 #define DISPLAY_WIDTH   1600
 #define DISPLAY_HEIGHT  900
+#define BACKGROUND_WIDTH   (3000)
+#define BACKGROUND_HEIGHT  (1000)
+#define BACKGROUND_SOURCE_WIDTH   2380
+#define BACKGROUND_SOURCE_HEIGHT  850
 
 // Definições dos Timers
 #define FPS             60
@@ -139,7 +143,6 @@ bool movement = false;
 bool movementBoost = false;
 bool readMenu = false;
 bool jumpResistance = false;
-
 int Player_State = 0;
 int Player_Dir = 0; //0 = esquerda; 1 = direita
 
@@ -149,6 +152,7 @@ int Player_Dir = 0; //0 = esquerda; 1 = direita
 char blocos[MAX_LINHAS][MAX_COLUNAS] = {{0}};
 struct matriz mouseBlock = {0};
 struct Posicao mapa = {0};
+struct Posicao backgroundPos = {0};
 struct Objeto jogador = {((DISPLAY_WIDTH/2)-50), ((DISPLAY_HEIGHT/2)-50), CHARACTER_WIDTH - 2, CHARACTER_HEIGHT - 2, 0, 0};
 Sprite_Animation running;
 Sprite_Animation idle;
@@ -258,6 +262,7 @@ int main()
     ALLEGRO_BITMAP *blocoAgua = NULL;
 
     ALLEGRO_BITMAP *blockCracks = NULL;
+    ALLEGRO_BITMAP *background = NULL;
 
     ALLEGRO_BITMAP *RunningMiner = NULL;
     ALLEGRO_BITMAP *IdleMiner = NULL;
@@ -276,6 +281,7 @@ int main()
     blocoAgua = al_load_bitmap("Bitmaps/Agua.bmp");
 
     blockCracks = al_load_bitmap("Bitmaps/blockCracks.png");
+    background = al_load_bitmap("Bitmaps/Background1.jpg");
 
     RunningMiner = al_load_bitmap("Bitmaps/minerRunning.png");
     IdleMiner = al_load_bitmap("Bitmaps/minerIdle.png");
@@ -311,7 +317,7 @@ int main()
     dying.frameWidth = 80;
 
     mining.maxFrame = 10;
-    mining.frameDelay = 6;
+    mining.frameDelay = 3;
     mining.frameCount = 0;
     mining.curFrame = 0;
     mining.frameHeight = 80;
@@ -838,6 +844,8 @@ int main()
                 {
                     if(blocos[mouseBlock.linha][mouseBlock.coluna] != 0)
                     {
+                        mine = true;
+
                         if(++blockCracking.frameCount >= blockCracking.frameDelay)
                         {
                             blockCracking.frameCount = 0;
@@ -856,10 +864,18 @@ int main()
                         else if((mapa.x + (mouseBlock.coluna * blockWidth)) > jogador.x)
                             Player_Dir = 1;
                     }
-                }else
+                    else
+                    {
+                        blockCracking.frameCount = 0;
+                        blockCracking.curFrame = 0;
+                        mine = false;
+                    }
+                }
+                else
                 {
                     blockCracking.frameCount = 0;
                     blockCracking.curFrame = 0;
+                    mine = false;
                 }
             }
             else
@@ -928,6 +944,9 @@ int main()
                 jogador.y = ((DISPLAY_HEIGHT/2) - (jogador.height/2));
             }
 
+            backgroundPos.x = ((DISPLAY_WIDTH - BACKGROUND_WIDTH) * mapa.x / (DISPLAY_WIDTH - (numColunas * blockWidth)));
+            backgroundPos.y = ((DISPLAY_HEIGHT - BACKGROUND_HEIGHT) * mapa.y / (DISPLAY_HEIGHT - (numLinhas * blockHeight)));
+
             movement = false;
             movementBoost = false;
 
@@ -937,6 +956,8 @@ int main()
             {
                 draw = false;
 
+                al_draw_scaled_bitmap(background, 0, 0, BACKGROUND_SOURCE_WIDTH, BACKGROUND_SOURCE_HEIGHT, backgroundPos.x, backgroundPos.y, BACKGROUND_WIDTH, BACKGROUND_HEIGHT, 0);
+
                 for(i = 0; i < numLinhas; i++)
                 {
                     for(j = 0; j < numColunas; j++)
@@ -945,7 +966,7 @@ int main()
                             switch(blocos[i][j])
                             {
                             case 0: // AR
-                                al_draw_filled_rectangle(mapa.x + j * blockWidth, mapa.y + i * blockHeight, mapa.x + (j * blockWidth) + blockWidth, mapa.y + (i * blockHeight) + blockHeight, al_map_rgb(COR_AR));
+                                //al_draw_filled_rectangle(mapa.x + j * blockWidth, mapa.y + i * blockHeight, mapa.x + (j * blockWidth) + blockWidth, mapa.y + (i * blockHeight) + blockHeight, al_map_rgb(COR_AR));
                                 break;
                             case 1: // TERRA
                                 if(blocos[i-1][j] == 0)
@@ -1049,7 +1070,7 @@ int main()
                     al_draw_scaled_bitmap(DyingMiner, dying.curFrame * dying.frameWidth, 0, dying.frameWidth, dying.frameHeight, jogador.x - 70, jogador.y - 75, dying.frameWidth * 2.5, dying.frameHeight * 2.5,0);
                 }
 
-                if(mine = true)
+                if(mine == true)
                 {
                     al_draw_scaled_bitmap(blockCracks, blockCracking.curFrame * blockCracking.frameWidth, 0, blockCracking.frameWidth, blockCracking.frameHeight, (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight)), blockWidth, blockHeight,0);
                 }
