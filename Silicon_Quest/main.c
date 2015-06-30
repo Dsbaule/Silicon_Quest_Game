@@ -155,6 +155,7 @@ Sprite_Animation idle;
 Sprite_Animation dying;
 Sprite_Animation mining;
 Sprite_Animation standing;
+Sprite_Animation blockCracking;
 
 int numColunas = 100;
 int numLinhas = 100;
@@ -255,11 +256,15 @@ int main()
     ALLEGRO_BITMAP *blocoSilicio = NULL;
     ALLEGRO_BITMAP *blocoLava = NULL;
     ALLEGRO_BITMAP *blocoAgua = NULL;
+
+    ALLEGRO_BITMAP *blockCracks = NULL;
+
     ALLEGRO_BITMAP *RunningMiner = NULL;
     ALLEGRO_BITMAP *IdleMiner = NULL;
     ALLEGRO_BITMAP *StandingMiner = NULL;
     ALLEGRO_BITMAP *MiningMiner = NULL;
     ALLEGRO_BITMAP *DyingMiner = NULL;
+
     ALLEGRO_BITMAP *pickaxeCursor = NULL;
     ALLEGRO_BITMAP *idleCursor = NULL;
 
@@ -269,11 +274,15 @@ int main()
     blocoSilicio = al_load_bitmap("Bitmaps/Silicio.bmp");
     blocoLava = al_load_bitmap("Bitmaps/Lava.bmp");
     blocoAgua = al_load_bitmap("Bitmaps/Agua.bmp");
+
+    blockCracks = al_load_bitmap("Bitmaps/blockCracks.png");
+
     RunningMiner = al_load_bitmap("Bitmaps/minerRunning.png");
     IdleMiner = al_load_bitmap("Bitmaps/minerIdle.png");
     StandingMiner = al_load_bitmap("Bitmaps/minerStanding.png");
     MiningMiner = al_load_bitmap("Bitmaps/minerMining.png");
     DyingMiner = al_load_bitmap("Bitmaps/mineDying.png");
+
     pickaxeCursor = al_load_bitmap("Bitmaps/MineCursor.png");
     idleCursor = al_load_bitmap("Bitmaps/NotMineCursor.png");
 
@@ -315,6 +324,13 @@ int main()
     standing.frameHeight = 80;
     standing.frameWidth = 80;
 
+    blockCracking.maxFrame = 11;
+    blockCracking.frameDelay = 150;
+    blockCracking.frameCount = 0;
+    blockCracking.curFrame = 0;
+    blockCracking.frameHeight = 128;
+    blockCracking.frameWidth = 128;
+
     //--------------------------------------------------
     // Definição das variaveis auxiliares
     //--------------------------------------------------
@@ -323,6 +339,7 @@ int main()
     bool colisionRight  = 0;
     bool colisionUp     = 0;
     bool colisionDown   = 0;
+    bool mine = false;
 
     //--------------------------------------------------
     // Loop para o jogo
@@ -816,23 +833,40 @@ int main()
                     || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight))))
                     || (threshold > CheckDistance((jogador.x + 23), (jogador.y + 50), (mapa.x + blockWidth + (mouseBlock.coluna * blockWidth)), (mapa.y + blockHeight + (mouseBlock.linha * blockHeight)))))
             {
-				PickaxeCursor = 1;
+                PickaxeCursor = 1;
                 if(keys[MOUSE_1] && !(keys[LEFT] || keys[A] || keys[RIGHT] || keys[D] || keys[UP] || keys[W] || keys[DOWN] || keys[S]))
                 {
+                    if(blocos[mouseBlock.linha][mouseBlock.coluna] != 0)
+                    {
+                        if(++blockCracking.frameCount >= blockCracking.frameDelay)
+                        {
+                            blockCracking.frameCount = 0;
+                            blockCracking.curFrame++;
 
-                    blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
-                    Player_State = 4;
+                            if(blockCracking.curFrame >= blockCracking.maxFrame)
+                                blockCracking.curFrame = 0;
 
-                    if((mapa.x + (mouseBlock.coluna * blockWidth)) < jogador.x)
-                        Player_Dir = 0;
-                    else if((mapa.x + (mouseBlock.coluna * blockWidth)) > jogador.x)
-                        Player_Dir = 1;
+                            if(blockCracking.curFrame == 0)
+                                blocos[mouseBlock.linha][mouseBlock.coluna] = 0;
+                        }
+                        Player_State = 4;
+
+                        if((mapa.x + (mouseBlock.coluna * blockWidth)) < jogador.x)
+                            Player_Dir = 0;
+                        else if((mapa.x + (mouseBlock.coluna * blockWidth)) > jogador.x)
+                            Player_Dir = 1;
+                    }
+                }else
+                {
+                    blockCracking.frameCount = 0;
+                    blockCracking.curFrame = 0;
                 }
             }
             else
-			{
-				PickaxeCursor = 0;
-			}
+            {
+                PickaxeCursor = 0;
+
+            }
             if(keys[MOUSE_2])
                 blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
 
@@ -1015,10 +1049,15 @@ int main()
                     al_draw_scaled_bitmap(DyingMiner, dying.curFrame * dying.frameWidth, 0, dying.frameWidth, dying.frameHeight, jogador.x - 70, jogador.y - 75, dying.frameWidth * 2.5, dying.frameHeight * 2.5,0);
                 }
 
+                if(mine = true)
+                {
+                    al_draw_scaled_bitmap(blockCracks, blockCracking.curFrame * blockCracking.frameWidth, 0, blockCracking.frameWidth, blockCracking.frameHeight, (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight)), blockWidth, blockHeight,0);
+                }
+
                 if(PickaxeCursor == 1)
-					al_draw_bitmap(pickaxeCursor, mouse.x, (mouse.y + 6), ALLEGRO_FLIP_HORIZONTAL);
-				if(PickaxeCursor == 0)
-					al_draw_bitmap(idleCursor, (mouse.x - 16), (mouse.y - 6), 0);
+                    al_draw_bitmap(pickaxeCursor, mouse.x, (mouse.y + 6), ALLEGRO_FLIP_HORIZONTAL);
+                if(PickaxeCursor == 0)
+                    al_draw_bitmap(idleCursor, (mouse.x - 16), (mouse.y - 6), 0);
 
                 if(SHOW_BORDER)
                     al_draw_rectangle(DISPLAY_WIDTH - (10 + blockWidth), 10, DISPLAY_WIDTH - 10, 10 + blockHeight, al_map_rgb(COR_BORDAS), 1);

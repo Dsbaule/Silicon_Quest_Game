@@ -34,7 +34,12 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add directory="C:/CodeBlocks/MinGW/allegro5/include" />
 		</Compiler>
+		<Linker>
+			<Add library="C:\CodeBlocks\MinGW\allegro5\bin\allegro-5.0.10-monolith-mt.dll" />
+			<Add directory="C:/CodeBlocks/MinGW/allegro5/lib" />
+		</Linker>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
