@@ -25,8 +25,8 @@
 #define DISPLAY_HEIGHT  900
 #define BACKGROUND_WIDTH   (3000)
 #define BACKGROUND_HEIGHT  (1000)
-#define BACKGROUND_SOURCE_WIDTH   2380
-#define BACKGROUND_SOURCE_HEIGHT  850
+#define BACKGROUND_SOURCE_WIDTH   1000
+#define BACKGROUND_SOURCE_HEIGHT  500
 
 // Definições dos Timers
 #define FPS             60
@@ -84,6 +84,7 @@ ALLEGRO_DISPLAY *display = NULL;
 const int blockHeight = 50;
 const int blockWidth = 50;
 const int threshold = 125;
+const int enemy_threshold = 300;
 
 //--------------------------------------------------
 // Definição das structs globais
@@ -96,6 +97,8 @@ struct Objeto
     int     height;
     float   force;
     bool    jump;
+    int		life;
+    bool	live;
 };
 
 struct Posicao
@@ -145,6 +148,8 @@ bool readMenu = false;
 bool jumpResistance = false;
 int Player_State = 0;
 int Player_Dir = 0; //0 = esquerda; 1 = direita
+int Enemy_State = 0;
+int Enemy_Dir = 0;
 
 //--------------------------------------------------
 // Definição das variaveis gerais globais
@@ -153,13 +158,18 @@ char blocos[MAX_LINHAS][MAX_COLUNAS] = {{0}};
 struct matriz mouseBlock = {0};
 struct Posicao mapa = {0};
 struct Posicao backgroundPos = {0};
-struct Objeto jogador = {((DISPLAY_WIDTH/2)-50), ((DISPLAY_HEIGHT/2)-50), CHARACTER_WIDTH - 2, CHARACTER_HEIGHT - 2, 0, 0};
+struct Objeto jogador = {((DISPLAY_WIDTH/2)-50), ((DISPLAY_HEIGHT/2)-50), CHARACTER_WIDTH - 2, CHARACTER_HEIGHT - 2, 0, 0, 1, 3};
+struct Objeto enemy = {(500), (500), CHARACTER_WIDTH - 2, CHARACTER_HEIGHT - 2, 0, 0, 1, 1};
+struct Posicao enemy_spawn = {500, 500, 0};
 Sprite_Animation running;
 Sprite_Animation idle;
 Sprite_Animation dying;
 Sprite_Animation mining;
 Sprite_Animation standing;
 Sprite_Animation blockCracking;
+
+Sprite_Animation enemy_idle;
+Sprite_Animation enemy_running;
 
 int numColunas = 100;
 int numLinhas = 100;
@@ -179,7 +189,9 @@ int detectColisionLeft_Matriz(struct Objeto character, struct Posicao mapaPos, c
 int detectColisionUp_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 int detectColisionDown_Matriz(struct Objeto character, struct Posicao mapaPos, char blockPos[numLinhas][numColunas]);
 void Animation(int Player_State);
+void Enemy_Animation(int Enemy_State);
 float CheckDistance(int x1, int y1, int x2, int y2);
+float AngleToTarget(int x1, int y1, int x2, int y2);
 
 int main()
 {
@@ -270,6 +282,8 @@ int main()
     ALLEGRO_BITMAP *MiningMiner = NULL;
     ALLEGRO_BITMAP *DyingMiner = NULL;
 
+    ALLEGRO_BITMAP *mineturtle = NULL;
+
     ALLEGRO_BITMAP *pickaxeCursor = NULL;
     ALLEGRO_BITMAP *idleCursor = NULL;
 
@@ -281,13 +295,15 @@ int main()
     blocoAgua = al_load_bitmap("Bitmaps/Agua.bmp");
 
     blockCracks = al_load_bitmap("Bitmaps/blockCracks.png");
-    background = al_load_bitmap("Bitmaps/Background1.jpg");
+    background = al_load_bitmap("Bitmaps/caveBack.png");
 
     RunningMiner = al_load_bitmap("Bitmaps/minerRunning.png");
     IdleMiner = al_load_bitmap("Bitmaps/minerIdle.png");
     StandingMiner = al_load_bitmap("Bitmaps/minerStanding.png");
     MiningMiner = al_load_bitmap("Bitmaps/minerMining.png");
     DyingMiner = al_load_bitmap("Bitmaps/mineDying.png");
+
+    mineturtle = al_load_bitmap("Bitmaps/MineTurtle.png");
 
     pickaxeCursor = al_load_bitmap("Bitmaps/MineCursor.png");
     idleCursor = al_load_bitmap("Bitmaps/NotMineCursor.png");
@@ -336,6 +352,20 @@ int main()
     blockCracking.curFrame = 0;
     blockCracking.frameHeight = 128;
     blockCracking.frameWidth = 128;
+
+    enemy_idle.maxFrame = 2;
+    enemy_idle.frameDelay = 20;
+    enemy_idle.frameCount = 0;
+    enemy_idle.curFrame = 0;
+    enemy_idle.frameHeight = 85;
+    enemy_idle.frameWidth = 105;
+
+    enemy_running.maxFrame = 2;
+    enemy_running.frameDelay = 5;
+    enemy_running.frameCount = 0;
+    enemy_running.curFrame = 0;
+    enemy_running.frameHeight = 85;
+    enemy_running.frameWidth = 105;
 
     //--------------------------------------------------
     // Definição das variaveis auxiliares
@@ -765,6 +795,49 @@ int main()
                     selectedBlock = NUM_BLOCOS - 1;
             }
 
+            if(Enemy_State == 0)
+			{
+				if(enemy_threshold > CheckDistance(jogador.x, jogador.y, enemy.x, enemy.y))
+				{
+					Enemy_State = 1;
+				}
+
+			}
+			else if(Enemy_State == 1)
+			{
+				if(enemy_threshold < CheckDistance(enemy.x, enemy.y, enemy_spawn.x, enemy_spawn.y))
+				{
+					Enemy_State = 2;
+				}
+				else
+				{
+					float angle = AngleToTarget(enemy.x, enemy.y, jogador.x, jogador.y);
+					enemy.x += (2 * cos(angle));
+
+					if(enemy_threshold < CheckDistance(enemy.x, enemy.y, jogador.x, jogador.y))
+					{
+						Enemy_State = 2;
+					}
+				}
+			}
+			else if(Enemy_State == 2)
+			{
+				if(5 >= CheckDistance(enemy.x, enemy.y, enemy_spawn.x, enemy_spawn.y))
+				{
+					enemy.x = enemy_spawn.x;
+					Enemy_State = 0;
+				}
+				else
+				{
+					float angle = AngleToTarget(enemy.x, enemy.y, enemy_spawn.x, enemy_spawn.y);
+					enemy.x += (2 * cos(angle));
+
+					if(threshold > CheckDistance(enemy.x, enemy.y, jogador.x, jogador.y))
+						Enemy_State = 1;
+				}
+			}
+
+
 
             if((movement && !keys[SHIFT])||(movementBoost && keys[SHIFT]))
             {
@@ -880,8 +953,10 @@ int main()
             }
             else
             {
+            	blockCracking.frameCount = 0;
+				blockCracking.curFrame = 0;
+				mine = false;
                 PickaxeCursor = 0;
-
             }
             if(keys[MOUSE_2])
                 blocos[mouseBlock.linha][mouseBlock.coluna] = selectedBlock;
@@ -991,8 +1066,11 @@ int main()
                 }
 
                 Animation(Player_State);
+                Enemy_Animation(Enemy_State);
 
-                //al_draw_filled_rectangle(jogador.x, jogador.y, jogador.x + jogador.width, jogador.y + jogador.height, al_map_rgb(COR_LIMITS));
+				al_draw_circle(enemy.x, enemy.y, enemy_threshold, al_map_rgba_f(.5, 0, .5, .5), 1);
+				al_draw_circle(enemy_spawn.x, enemy_spawn.y, enemy_threshold, al_map_rgba_f(.5, .5, .5, .5), 1);
+                al_draw_filled_rectangle(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height, al_map_rgb(COR_LIMITS));
 
                 // DRAW BORDERS
                 if(SHOW_BORDER)
@@ -1029,6 +1107,20 @@ int main()
                     al_draw_scaled_bitmap(blocoAgua, 0, 0, source.x, source.y, DISPLAY_WIDTH - (10 + blockWidth), 10, blockWidth, blockHeight, 0);
                     break;
                 }
+
+                if(mine == true)
+                {
+                    al_draw_scaled_bitmap(blockCracks, blockCracking.curFrame * blockCracking.frameWidth, 0, blockCracking.frameWidth, blockCracking.frameHeight, (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight)), blockWidth, blockHeight,0);
+                }
+
+                if(Enemy_State == 0)
+				{
+					al_draw_scaled_bitmap(mineturtle, enemy_idle.curFrame * enemy_idle.frameWidth, 0, enemy_idle.frameWidth, enemy_idle.frameHeight, enemy.x, enemy.y, enemy_idle.frameWidth * 0.5, enemy_idle.frameHeight * 0.5,0);
+				}
+				if(Enemy_State == 1 || Enemy_State == 2)
+				{
+					al_draw_scaled_bitmap(mineturtle, enemy_running.curFrame * enemy_running.frameWidth, 0, enemy_running.frameWidth, enemy_running.frameHeight, enemy.x, enemy.y, enemy_running.frameWidth * 0.5, enemy_running.frameHeight * 0.5,0);
+				}
 
                 if(Player_State == 0 && Player_Dir == 0)
                 {
@@ -1070,11 +1162,6 @@ int main()
                     al_draw_scaled_bitmap(DyingMiner, dying.curFrame * dying.frameWidth, 0, dying.frameWidth, dying.frameHeight, jogador.x - 70, jogador.y - 75, dying.frameWidth * 2.5, dying.frameHeight * 2.5,0);
                 }
 
-                if(mine == true)
-                {
-                    al_draw_scaled_bitmap(blockCracks, blockCracking.curFrame * blockCracking.frameWidth, 0, blockCracking.frameWidth, blockCracking.frameHeight, (mapa.x + (mouseBlock.coluna * blockWidth)), (mapa.y + (mouseBlock.linha * blockHeight)), blockWidth, blockHeight,0);
-                }
-
                 if(PickaxeCursor == 1)
                     al_draw_bitmap(pickaxeCursor, mouse.x, (mouse.y + 6), ALLEGRO_FLIP_HORIZONTAL);
                 if(PickaxeCursor == 0)
@@ -1108,6 +1195,7 @@ int main()
     al_destroy_bitmap(StandingMiner);
     al_destroy_bitmap(MiningMiner);
     al_destroy_bitmap(DyingMiner);
+    al_destroy_bitmap(mineturtle);
 
     al_destroy_event_queue(event_queue);
     al_destroy_timer(drawTimer);
@@ -1923,7 +2011,45 @@ void Animation(int Player_State)
     }
 }
 
+void Enemy_Animation(int Enemy_State)
+{
+    if(Enemy_State == 0)
+    {
+        if(++enemy_idle.frameCount >= enemy_idle.frameDelay)
+        {
+            if(++enemy_idle.curFrame >= enemy_idle.maxFrame)
+                enemy_idle.curFrame = 0;
+            enemy_idle.frameCount = 0;
+        }
+    }
+    else
+    {
+        enemy_idle.curFrame = 0;
+    }
+
+    if(Enemy_State == 1 || Enemy_State == 2)
+    {
+        if(++enemy_running.frameCount >= enemy_running.frameDelay)
+        {
+            if(++enemy_running.curFrame >= enemy_running.maxFrame)
+                enemy_running.curFrame = 0;
+            enemy_running.frameCount = 0;
+        }
+    }
+    else
+    {
+        enemy_running.curFrame = 0;
+    }
+}
+
 float CheckDistance(int x1, int y1, int x2, int y2)
 {
     return sqrt(pow((float)x1 - x2, 2) + pow((float)y1 - y2, 2));
+}
+
+float AngleToTarget(int x1, int y1, int x2, int y2)
+{
+	float deltaX = (x2 - x1);
+	float deltaY = (y2 - y1);
+	return atan2(deltaY, deltaX);
 }
